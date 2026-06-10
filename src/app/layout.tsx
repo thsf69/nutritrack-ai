@@ -39,7 +39,7 @@ export default function RootLayout({
 }>) {
   // REPLACE ca-pub-XXXXXXXXXXXXXXXX below with your real AdSense Publisher ID
   // Get it from: https://adsense.google.com after approval
-  const ADSENSE_PUBLISHER_ID = "ca-pub-XXXXXXXXXXXXXXXX";
+  const ADSENSE_PUBLISHER_ID = "ca-pub-1388658413618074";
   const isAdSenseReady = !ADSENSE_PUBLISHER_ID.includes("XXXX");
 
   return (
