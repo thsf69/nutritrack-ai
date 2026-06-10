@@ -1,103 +1,248 @@
-import Image from "next/image";
+'use client';
+
+import React, { useEffect } from 'react';
+import { useStore, hydrateStore } from '../store/useStore';
+import Auth from '../components/Auth';
+import Onboarding from '../components/Onboarding';
+import Dashboard from '../components/Dashboard';
+import FoodLogger from '../components/FoodLogger';
+import MealPlanner from '../components/MealPlanner';
+import AICoach from '../components/AICoach';
+import Analytics from '../components/Analytics';
+import AchievementsView from '../components/AchievementsView';
+import MockAdOverlay from '../components/MockAdOverlay';
+import { initializeAdMob, showBannerAd } from '../lib/admob';
+
+import { 
+  Flame, Sparkles, LayoutDashboard, Utensils, CalendarRange, 
+  Bot, BarChart3, Award, Moon, Sun, LogOut 
+} from 'lucide-react';
 
 export default function Home() {
-  return (
-    <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="font-mono list-inside list-decimal text-sm/6 text-center sm:text-left">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] font-mono font-semibold px-1 py-0.5 rounded">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+  const { 
+    isHydrated, userSession, profile, activeTab, theme, streak,
+    setActiveTab, toggleTheme, logoutUser 
+  } = useStore();
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
+  // Load state from localStorage on initial render
+  useEffect(() => {
+    hydrateStore();
+  }, []);
+
+  // Initialize AdMob when store is hydrated
+  useEffect(() => {
+    if (isHydrated && userSession) {
+      initializeAdMob();
+      showBannerAd();
+    }
+  }, [isHydrated, userSession]);
+
+  // Show premium loading spinner while hydrating
+  if (!isHydrated) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-zinc-950">
+        <div className="text-center space-y-4">
+          <div className="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-zinc-500 font-medium">Hydrating your nutrition vault...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 1. Auth Gate
+  if (!userSession) {
+    return <Auth />;
+  }
+
+  // 2. Onboarding Gate
+  if (!profile) {
+    return <Onboarding />;
+  }
+
+  // Navigation Config
+  const navigationItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'logger', label: 'Food Logger', icon: Utensils },
+    { id: 'meals', label: 'Meal Planner', icon: CalendarRange },
+    { id: 'coach', label: 'AI Coach', icon: Bot },
+    { id: 'analytics', label: 'Analytics', icon: BarChart3 },
+    { id: 'achievements', label: 'Badges', icon: Award }
+  ];
+
+  const renderActiveTab = () => {
+    switch (activeTab) {
+      case 'dashboard': return <Dashboard />;
+      case 'logger': return <FoodLogger />;
+      case 'meals': return <MealPlanner />;
+      case 'coach': return <AICoach />;
+      case 'analytics': return <Analytics />;
+      case 'achievements': return <AchievementsView />;
+      default: return <Dashboard />;
+    }
+  };
+
+  return (
+    <div className="min-h-screen bg-background text-foreground transition-colors duration-300 flex flex-col md:flex-row relative">
+      
+      {/* Visual background ambient grids */}
+      <div className="absolute top-0 right-0 w-[40%] h-[40%] rounded-full bg-emerald-500/5 blur-[120px] pointer-events-none z-0" />
+      <div className="absolute bottom-0 left-0 w-[40%] h-[40%] rounded-full bg-teal-500/5 blur-[120px] pointer-events-none z-0" />
+
+      {/* Side Navigation - Tablet/Desktop */}
+      <aside className="hidden md:flex flex-col justify-between w-64 border-r border-zinc-900 bg-zinc-950/40 backdrop-blur-xl p-6 shrink-0 relative z-10">
+        <div className="space-y-8">
+          {/* Logo Header */}
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-500 to-emerald-400 flex items-center justify-center shadow-lg shadow-emerald-500/20">
+              <Sparkles className="w-4.5 h-4.5 text-zinc-950" />
+            </div>
+            <h1 className="text-lg font-black tracking-tight text-white">
+              NutriTrack <span className="text-emerald-400">AI</span>
+            </h1>
+          </div>
+
+          {/* Navigation Links */}
+          <nav className="space-y-1">
+            {navigationItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setActiveTab(item.id)}
+                  className={`w-full flex items-center gap-3.5 px-4 py-3 rounded-xl text-xs font-bold transition-all ${
+                    isActive 
+                      ? 'bg-emerald-500 text-zinc-950 shadow-lg shadow-emerald-500/10' 
+                      : 'text-zinc-400 hover:text-white hover:bg-zinc-900/60'
+                  }`}
+                >
+                  <Icon className="w-4.5 h-4.5 shrink-0" />
+                  {item.label}
+                </button>
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* Sidebar Footer Controls */}
+        <div className="border-t border-zinc-900 pt-6 space-y-4">
+          {/* Theme toggler & Logout */}
+          <div className="flex items-center justify-between">
+            <button
+              onClick={toggleTheme}
+              className="w-10 h-10 rounded-xl bg-zinc-900/60 border border-zinc-850 hover:border-zinc-700 flex items-center justify-center text-zinc-400 hover:text-white transition-colors cursor-pointer"
+              title="Toggle Theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4.5 h-4.5" /> : <Moon className="w-4.5 h-4.5" />}
+            </button>
+            
+            <button
+              onClick={logoutUser}
+              className="w-10 h-10 rounded-xl bg-zinc-900/60 border border-zinc-850 hover:border-rose-900/30 hover:bg-rose-950/20 flex items-center justify-center text-zinc-400 hover:text-rose-400 transition-colors cursor-pointer"
+              title="Logout"
+            >
+              <LogOut className="w-4.5 h-4.5" />
+            </button>
+          </div>
+
+          <div className="text-[10px] text-zinc-650 font-medium text-center">
+            NutriTrack AI v1.0.0
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Content Pane Wrapper */}
+      <main className="flex-1 flex flex-col min-w-0 relative z-10 pb-20 md:pb-0 h-screen overflow-hidden">
+        
+        {/* Top Header Bar */}
+        <header className="flex justify-between items-center px-6 py-4 border-b border-zinc-900 bg-zinc-950/20 backdrop-blur-md shrink-0">
+          <div className="flex items-center gap-3">
+            {/* Small screen menu triggers activeTab name */}
+            <h2 className="text-base font-black text-white capitalize tracking-tight block md:hidden">
+              NutriTrack <span className="text-emerald-400">AI</span>
+            </h2>
+            <h2 className="text-sm font-extrabold text-zinc-400 capitalize tracking-tight hidden md:block">
+              {activeTab.replace('_', ' ')}
+            </h2>
+          </div>
+
+          {/* Right Header Controls */}
+          <div className="flex items-center gap-3">
+            {/* Mobile quick actions for theme toggling */}
+            <button
+              onClick={toggleTheme}
+              className="md:hidden w-8.5 h-8.5 rounded-lg bg-zinc-900/60 border border-zinc-850 flex items-center justify-center text-zinc-400 hover:text-white"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4" /> : <Moon className="w-4 h-4" />}
+            </button>
+
+            {/* Streak Counter */}
+            <div className="flex items-center gap-1.5 bg-amber-500/10 border border-amber-500/20 py-1 px-3 rounded-lg text-amber-500 text-xs font-black">
+              <Flame className="w-3.5 h-3.5 fill-amber-500" />
+              <span>{streak.currentLoggingStreak} Day Streak</span>
+            </div>
+
+            {/* User display */}
+            <div className="text-right hidden sm:block">
+              <span className="text-[10px] font-bold text-zinc-550 block uppercase tracking-wider">Active Profile</span>
+              <span className="text-xs font-bold text-white">{profile.name}</span>
+            </div>
+          </div>
+        </header>
+
+        {/* Inner Scrolling active page */}
+        <div className="flex-1 overflow-y-auto p-6 scrollbar-none">
+          {renderActiveTab()}
         </div>
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
+
+      {/* Bottom Navigation - Mobile Only */}
+      <nav className="md:hidden fixed bottom-0 inset-x-0 border-t border-zinc-900 bg-zinc-950/70 backdrop-blur-xl py-2 px-4 flex justify-between items-center z-50">
+        {navigationItems.map((item) => {
+          const Icon = item.icon;
+          const isActive = activeTab === item.id;
+
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={`flex flex-col items-center gap-1 px-2.5 py-1 rounded-lg transition-colors ${
+                isActive ? 'text-emerald-400' : 'text-zinc-500'
+              }`}
+            >
+              <Icon className="w-5 h-5 shrink-0" />
+              <span className="text-[9px] font-bold tracking-tight">{item.label}</span>
+            </button>
+          );
+        })}
+      </nav>
+
+      {/* Mock Ad Banner (Web Browser Demo) */}
+      {(() => {
+        const isMobileSession = typeof window !== 'undefined' && (window.location.protocol === 'file:' || (window as any).Capacitor);
+        if (!isMobileSession) {
+          return (
+            <div className="fixed bottom-0 inset-x-0 md:left-64 bg-zinc-950/80 border-t border-zinc-900 px-6 py-2.5 flex items-center justify-between text-[11px] text-zinc-400 backdrop-blur-md z-40 pb-22 md:pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="bg-zinc-800 text-[8px] text-zinc-500 font-bold px-1.5 py-0.5 rounded border border-zinc-850">AD</span>
+                <span>Get 20% off NutriTrack Premium with yearly subscription plans.</span>
+              </div>
+              <button 
+                onClick={() => useStore.setState({ activeTab: 'dashboard' })} 
+                className="text-emerald-400 font-black hover:underline cursor-pointer"
+              >
+                Upgrade Now
+              </button>
+            </div>
+          );
+        }
+        return null;
+      })()}
+
+      {/* Full-Screen Mock Ad Overlay (Web Browser Demo) */}
+      <MockAdOverlay />
+
     </div>
   );
 }

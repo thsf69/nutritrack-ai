@@ -1,0 +1,6 @@
+{
+  "appId": "com.nutritrack.ai",
+  "appName": "NutriTrack AI",
+  "webDir": "out",
+  "bundledWebRuntime": false
+}
